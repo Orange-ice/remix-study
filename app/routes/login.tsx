@@ -11,6 +11,7 @@ import {
 
 import {db} from '~/utils/db.server';
 import stylesUrl from '~/styles/login.css';
+import {createUserSession, login} from '~/utils/session.server';
 
 export const links: LinksFunction = () => {
   return [{rel: 'stylesheet', href: stylesUrl}];
@@ -84,13 +85,16 @@ export const action: ActionFunction = async ({
 
   switch (loginType) {
     case 'login': {
-      // login to get the user
-      // if there's no user, return the fields and a formError
+      const user = await login({username, password});
+      console.log({user});
+      if (!user) {
+        return badRequest({
+          fields,
+          formError: `Username/Password combination is incorrect`,
+        });
+      }
+      return createUserSession(user.id, redirectTo);
       // if there is a user, create their session and redirect to /jokes
-      return badRequest({
-        fields,
-        formError: 'Not implemented',
-      });
     }
     case 'register': {
       const userExists = await db.user.findFirst({
