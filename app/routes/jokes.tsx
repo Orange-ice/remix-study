@@ -1,12 +1,27 @@
-import {Link, Outlet} from '@remix-run/react';
-import type {LinksFunction} from '@remix-run/node';
+import {Link, Outlet, useLoaderData} from '@remix-run/react';
+import type {LinksFunction, LoaderFunction} from '@remix-run/node';
 import styleUrl from '~/styles/jokes.css';
+import {db} from '~/utils/db.server';
+import type {Joke} from '@prisma/client';
+import {json} from '@remix-run/node';
 
 export const links: LinksFunction = () => [
   {rel: 'stylesheet', href: styleUrl},
 ];
 
+type LoaderData = {
+  jokeListItems: Array<Joke>
+}
+
+export const loader: LoaderFunction = async () => {
+  const data = {
+    jokeListItems: await db.joke.findMany(),
+  };
+  return json(data);
+};
+
 export default function JokesRoute() {
+  const data = useLoaderData<LoaderData>();
   return (
     <div className="jokes-layout">
       <header className="jokes-header">
@@ -32,6 +47,11 @@ export default function JokesRoute() {
               <li>
                 <Link to="some-joke-id">Hippo</Link>
               </li>
+              {data.jokeListItems.map(joke => (
+                <li key={joke.id}>
+                  <Link to={`${joke.id}`}>{joke.name}</Link>
+                </li>
+              ))}
             </ul>
             <Link to="new" className="button">
               Add your own
