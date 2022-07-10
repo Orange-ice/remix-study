@@ -2,7 +2,6 @@ import {Link, Outlet, useLoaderData} from '@remix-run/react';
 import type {LinksFunction, LoaderFunction} from '@remix-run/node';
 import styleUrl from '~/styles/jokes.css';
 import {db} from '~/utils/db.server';
-import type {Joke} from '@prisma/client';
 import {json} from '@remix-run/node';
 
 export const links: LinksFunction = () => [
@@ -10,12 +9,16 @@ export const links: LinksFunction = () => [
 ];
 
 type LoaderData = {
-  jokeListItems: Array<Joke>
+  jokeListItems: Array<{ id: string, name: string }>
 }
 
 export const loader: LoaderFunction = async () => {
-  const data = {
-    jokeListItems: await db.joke.findMany(),
+  const data: LoaderData = {
+    jokeListItems: await db.joke.findMany({
+      take: 5,
+      select: {id: true, name: true},
+      orderBy: {createAt: 'desc'}
+    }),
   };
   return json(data);
 };
@@ -44,9 +47,6 @@ export default function JokesRoute() {
             <Link to=".">Get a random joke</Link>
             <p>Here are a few more jokes to check out:</p>
             <ul>
-              <li>
-                <Link to="some-joke-id">Hippo</Link>
-              </li>
               {data.jokeListItems.map(joke => (
                 <li key={joke.id}>
                   <Link to={`${joke.id}`}>{joke.name}</Link>
