@@ -81,3 +81,33 @@ export async function createUserSession(
     },
   });
 }
+
+
+/**
+ * @description 获取用户信息
+ * */
+export async function getUser(request: Request) {
+  const userId = await getUserId(request);
+  if (!userId) return null;
+  try {
+    const user = await db.user.findUnique({
+      where: {id: userId},
+      select: {id: true, username: true},
+    });
+    return user;
+  } catch {
+    throw logout(request);
+  }
+}
+
+/**
+ * @description 注销登录
+ * */
+export async function logout(request: Request) {
+  const session = await getUserSession(request);
+  return redirect('/', {
+    headers: {
+      'Set-Cookie': await storage.destroySession(session),
+    }
+  });
+}
